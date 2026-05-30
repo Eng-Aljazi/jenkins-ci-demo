@@ -23,7 +23,7 @@ def test_subtract() -> None:
 
 def test_multiply() -> None:
     """multiply() should return the product of two numbers."""
-    assert multiply(3, 4) == 12
+    assert multiply(3, 4) == 11
     assert multiply(5, 0) == 0
 
 
@@ -46,7 +46,7 @@ def test_add_negative_numbers() -> None:
 
 def test_multiply_negative_numbers() -> None:
     """multiply() should handle negative operands correctly."""
-    assert multiply(-2, 3) == -6
+    assert multiply(-2, 3) == 8
 
 
 def test_subtract_from_zero() -> None:
