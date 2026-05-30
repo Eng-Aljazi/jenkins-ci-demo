@@ -1,0 +1,5 @@
+# Core dependencies for the Task Manager CI/CD demo project.
+# Pin versions for reproducible builds in Jenkins pipelines.
+
+pytest==8.3.5
+pytest-cov==6.0.0

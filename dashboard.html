@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jenkins CI/CD Dashboard</title>
+  <link rel="stylesheet" href="/userContent/dashboard.css" />
+</head>
+<body>
+  <div class="dashboard">
+
+    <!-- Zone 1: Header -->
+    <header class="header">
+      <div class="header-left">
+        <h1>Jenkins CI/CD Dashboard</h1>
+        <span class="pipeline-tag">jenkins-ci-demo</span>
+      </div>
+      <div class="header-right">
+        <span class="conn-badge disconnected" id="connBadge">DISCONNECTED</span>
+        <span class="clock" id="clock">--:--:--</span>
+        <span class="refresh-label">↻ <strong id="countdown">30</strong>s</span>
+        <progress id="refreshProgress" value="30" max="30"></progress>
+        <button class="btn-icon" id="refreshNow" type="button" title="Refresh">↻</button>
+      </div>
+    </header>
+
+    <div class="connect-strip" id="connectPanel">
+      <input type="password" id="tokenInput" placeholder="API Token (skip if logged in)" autocomplete="off" />
+      <button class="btn" id="connectBtn" type="button">Connect</button>
+    </div>
+    <div class="banner error" id="errorBanner"></div>
+
+    <!-- Zone 2: Status strip — hero KPI, full width, horizontal -->
+    <section class="status-strip">
+      <div class="status-badge unknown" id="statusBadge">—</div>
+      <div class="status-divider"></div>
+      <div class="status-item"><span class="si-val" id="statusBuildNum">—</span><span class="si-lbl">Build</span></div>
+      <div class="status-item"><span class="si-val" id="statusAgo">—</span><span class="si-lbl">Last Run</span></div>
+      <div class="status-item"><span class="si-val" id="statusDuration">—</span><span class="si-lbl">Duration</span></div>
+      <div class="status-divider"></div>
+      <div class="status-commit">
+        <span class="si-lbl">Last Commit</span>
+        <span class="si-commit" id="statCommit">—</span>
+      </div>
+    </section>
+
+    <!-- Zone 3: KPI row — 4 equal columns -->
+    <section class="kpi-row">
+      <div class="kpi-card">
+        <span class="kpi-label">Total Builds</span>
+        <span class="kpi-value" id="statTotal">—</span>
+      </div>
+      <div class="kpi-card kpi-donut">
+        <span class="kpi-label">Success Rate</span>
+        <div class="donut-inline">
+          <canvas id="donutChart" width="56" height="56"></canvas>
+          <span class="kpi-value" id="statRate">—</span>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Avg Duration</span>
+        <span class="kpi-value" id="statAvg">—</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Failed Builds</span>
+        <span class="kpi-value fail" id="statFailed">—</span>
+      </div>
+    </section>
+
+    <!-- Zone 4: Detail split — 50/50 table + chart -->
+    <section class="detail-row">
+      <div class="panel">
+        <div class="panel-title">Build History</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>#</th><th>Status</th><th>Date</th><th>Dur</th><th>Commit</th></tr>
+            </thead>
+            <tbody id="historyBody">
+              <tr><td colspan="5" class="empty">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Duration Trend (seconds)</div>
+        <canvas id="trendChart"></canvas>
+        <div class="chart-legend">
+          <span><i class="dot success"></i> Success</span>
+          <span><i class="dot failure"></i> Failure</span>
+        </div>
+      </div>
+    </section>
+
+  </div>
+  <script src="/userContent/dashboard.js"></script>
+</body>
+</html>
