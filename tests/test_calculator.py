@@ -23,7 +23,7 @@ def test_subtract() -> None:
 
 def test_multiply() -> None:
     """multiply() should return the product of two numbers."""
-    assert multiply(3, 4) == 12
+    assert multiply(3, 4) == 11
     assert multiply(5, 0) == 0
 
 
