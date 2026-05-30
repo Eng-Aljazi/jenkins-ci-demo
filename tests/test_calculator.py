@@ -46,7 +46,7 @@ def test_add_negative_numbers() -> None:
 
 def test_multiply_negative_numbers() -> None:
     """multiply() should handle negative operands correctly."""
-    assert multiply(-2, 3) == 8
+    assert multiply(-2, 3) == -6
 
 
 def test_subtract_from_zero() -> None:
