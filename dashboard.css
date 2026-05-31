@@ -3,21 +3,24 @@
 */
 
 :root {
-  --bg: #0f1419;
-  --surface: #1a2332;
-  --surface-2: #243044;
-  --border: #2d3a4f;
-  --text: #e8edf4;
-  --muted: #8b9cb3;
-  --jenkins-blue: #1b6ca8;
-  --accent: #58a6ff;
-  --success: #2ea043;
-  --success-bg: rgba(46, 160, 67, 0.15);
-  --failure: #f85149;
-  --failure-bg: rgba(248, 81, 73, 0.15);
-  --warning: #d29922;
-  --warning-bg: rgba(210, 153, 34, 0.15);
-  --radius: 12px;
+  --bg: #0a0914;
+  --surface: #13112a;
+  --surface-2: #1c1838;
+  --border: #2a2550;
+  --text: #f0ecff;
+  --muted: #9d8ec7;
+  --jenkins-blue: #7c3aed;
+  --accent: #a855f7;
+  --accent-glow: rgba(168, 85, 247, 0.35);
+  --cyan: #22d3ee;
+  --mint: #34d399;
+  --success: #34d399;
+  --success-bg: rgba(52, 211, 153, 0.14);
+  --failure: #f472b6;
+  --failure-bg: rgba(244, 114, 182, 0.14);
+  --warning: #c084fc;
+  --warning-bg: rgba(192, 132, 252, 0.14);
+  --radius: 14px;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -28,8 +31,8 @@ html, body {
   font-family: "Segoe UI", system-ui, sans-serif;
   background: var(--bg);
   background-image:
-    radial-gradient(ellipse at 15% 0%, rgba(27, 108, 168, 0.14), transparent 55%),
-    radial-gradient(ellipse at 85% 100%, rgba(46, 160, 67, 0.06), transparent 55%);
+    radial-gradient(ellipse at 10% 0%, rgba(124, 58, 237, 0.22), transparent 55%),
+    radial-gradient(ellipse at 90% 100%, rgba(34, 211, 238, 0.08), transparent 55%);
   color: var(--text);
   font-size: 13px;
 }
@@ -126,7 +129,7 @@ progress {
   background: var(--surface-2);
 }
 
-progress::-webkit-progress-value { background: var(--jenkins-blue); border-radius: 4px; }
+progress::-webkit-progress-value { background: linear-gradient(90deg, #7c3aed, #a855f7); border-radius: 4px; }
 
 .btn-icon {
   background: var(--surface-2);
@@ -252,7 +255,7 @@ progress::-webkit-progress-value { background: var(--jenkins-blue); border-radiu
 .status-commit {
   flex: 1;
   min-width: 0;
-  text-align: right;
+  text-align: center;
 }
 
 .si-commit {
@@ -354,20 +357,30 @@ progress::-webkit-progress-value { background: var(--jenkins-blue); border-radiu
 
 .table-wrap {
   flex: 1;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
+
+.table-wrap::-webkit-scrollbar { width: 6px; }
+.table-wrap::-webkit-scrollbar-track { background: transparent; }
+.table-wrap::-webkit-scrollbar-thumb {
+  background: rgba(168, 85, 247, 0.35);
+  border-radius: 3px;
+}
+.table-wrap::-webkit-scrollbar-thumb:hover { background: rgba(168, 85, 247, 0.55); }
 
 table {
   width: 100%;
-  height: 100%;
   border-collapse: collapse;
   font-size: 0.92rem;
   table-layout: fixed;
 }
 
 th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
   text-align: left;
   padding: 10px 14px;
   color: var(--muted);
@@ -375,10 +388,11 @@ th {
   text-transform: uppercase;
   letter-spacing: 0.04em;
   background: var(--surface-2);
+  box-shadow: 0 1px 0 var(--border);
 }
 
 td {
-  padding: 0 14px;
+  padding: 10px 14px;
   border-top: 1px solid var(--border);
   vertical-align: middle;
   overflow: hidden;
@@ -387,13 +401,13 @@ td {
 }
 
 tbody tr {
-  height: calc(100% / 6);
+  height: 42px;
 }
 
 td.empty { text-align: center; color: var(--muted); }
 
-tr.row-success { background: rgba(46, 160, 67, 0.05); }
-tr.row-failure { background: rgba(248, 81, 73, 0.05); }
+tr.row-success { background: rgba(52, 211, 153, 0.04); }
+tr.row-failure { background: rgba(244, 114, 182, 0.04); }
 
 .badge {
   display: inline-block;
@@ -408,6 +422,14 @@ tr.row-failure { background: rgba(248, 81, 73, 0.05); }
 .badge.failure { background: var(--failure-bg); color: var(--failure); }
 .badge.progress { background: var(--warning-bg); color: var(--warning); }
 .badge.unknown { background: var(--surface-2); color: var(--muted); }
+
+.chart-wrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
 
 .panel canvas {
   flex: 1;

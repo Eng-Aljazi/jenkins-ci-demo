@@ -2,8 +2,10 @@
 
 const JOB_NAME = "jenkins-ci-demo";
 const USERNAME = "admin";
-const API_TREE = "builds[number,result,timestamp,duration,building,changeSet[items[comment]]]";
-const HISTORY_LIMIT = 6;
+const GITHUB_REPO = "Eng-Aljazi/jenkins-ci-demo";
+const API_TREE = "builds[number,result,timestamp,duration,building,changeSet[items[msg,comment,commitId]],changeSets[items[msg,comment,commitId]],actions[lastBuiltRevision[SHA1],remoteUrls]]";
+const commitMsgCache = new Map();
+const TABLE_LIMIT = 50;
 
 let API_TOKEN = "PASTE_TOKEN_HERE";
 const REFRESH_INTERVAL = 30;
@@ -18,13 +20,16 @@ let lastSuccessRate = 0;
 const $ = (id) => document.getElementById(id);
 
 const COLORS = {
-  success: "#2ea043",
-  failure: "#f85149",
-  warning: "#d29922",
-  accent: "#58a6ff",
-  grid: "#2d3a4f",
-  muted: "#8b9cb3",
-  track: "#243044",
+  success: "#34d399",
+  failure: "#f472b6",
+  warning: "#c084fc",
+  accent: "#a855f7",
+  accentLight: "#c084fc",
+  cyan: "#22d3ee",
+  grid: "#2a2550",
+  muted: "#9d8ec7",
+  track: "#1c1838",
+  text: "#f0ecff",
 };
 
 function buildApiUrl() {
@@ -76,11 +81,73 @@ function formatDateShort(ts) {
     + " " + d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
 }
 
-function getCommit(build) {
-  const items = build?.changeSet?.items;
-  if (!items?.length) return "—";
-  const msg = items[0].comment || "—";
-  return msg.length > 50 ? msg.slice(0, 47) + "…" : msg;
+function truncateMsg(msg) {
+  const text = msg.trim();
+  return text.length > 50 ? text.slice(0, 47) + "…" : text;
+}
+
+function getChangelogItems(build) {
+  const items = [];
+  if (build?.changeSet?.items?.length) items.push(...build.changeSet.items);
+  if (build?.changeSets?.length) {
+    for (const cs of build.changeSets) {
+      if (cs?.items?.length) items.push(...cs.items);
+    }
+  }
+  return items;
+}
+
+function getShaFromBuild(build) {
+  const items = getChangelogItems(build);
+  if (items[0]?.commitId) return items[0].commitId;
+  for (const action of build?.actions || []) {
+    if (action?.lastBuiltRevision?.SHA1) return action.lastBuiltRevision.SHA1;
+  }
+  return null;
+}
+
+function getCommitFromChangelog(build) {
+  const items = getChangelogItems(build);
+  if (!items.length) return null;
+  const msg = items[0].msg || items[0].comment;
+  return msg ? truncateMsg(msg) : null;
+}
+
+async function fetchGithubCommitMessage(sha) {
+  const cacheKey = sha.slice(0, 7);
+  if (commitMsgCache.has(cacheKey)) return commitMsgCache.get(cacheKey);
+  try {
+    const res = await fetch(
+      `https://api.github.com/repos/${GITHUB_REPO}/commits/${sha}`,
+      { headers: { Accept: "application/vnd.github+json" } }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    const line = data.commit?.message?.split("\n")[0]?.trim();
+    if (!line) return null;
+    const msg = truncateMsg(line);
+    commitMsgCache.set(cacheKey, msg);
+    return msg;
+  } catch (_) {
+    return null;
+  }
+}
+
+async function resolveCommitMessage(build) {
+  const fromLog = getCommitFromChangelog(build);
+  if (fromLog) return fromLog;
+  const sha = getShaFromBuild(build);
+  if (!sha) return "—";
+  const fromGithub = await fetchGithubCommitMessage(sha);
+  return fromGithub || "—";
+}
+
+async function resolveCommitMessages(builds) {
+  const messages = new Map();
+  await Promise.all(builds.map(async (b) => {
+    messages.set(b.number, await resolveCommitMessage(b));
+  }));
+  return messages;
 }
 
 function resolveStatus(build) {
@@ -145,7 +212,7 @@ function drawDonut(pct) {
   if (pct > 0) {
     ctx.beginPath();
     ctx.arc(cx, cy, r, start, start + pass);
-    ctx.strokeStyle = COLORS.success;
+    ctx.strokeStyle = COLORS.accent;
     ctx.lineWidth = lw;
     ctx.lineCap = "round";
     ctx.stroke();
@@ -189,8 +256,8 @@ function drawChart(builds) {
 
   const secs = builds.map((b) => Math.max(0, Math.round((b.duration || 0) / 1000)));
   const niceMax = Math.ceil(Math.max(...secs, 1) * 1.15);
-  const barGap = 10;
-  const barW = Math.min(52, (chartW - barGap * (builds.length - 1)) / builds.length);
+  const barGap = builds.length > 12 ? 6 : 10;
+  const barW = Math.min(52, Math.max(18, (chartW - barGap * (builds.length - 1)) / builds.length));
 
   ctx.strokeStyle = COLORS.grid;
   ctx.fillStyle = COLORS.muted;
@@ -215,11 +282,21 @@ function drawChart(builds) {
     const y = pad.top + chartH - barH;
     const s = resolveStatus(b);
 
-    ctx.fillStyle = s.cls === "success" ? COLORS.success
-                  : s.cls === "failure" ? COLORS.failure
-                  : COLORS.warning;
+    const grad = ctx.createLinearGradient(x, y, x, pad.top + chartH);
+    if (s.cls === "success") {
+      grad.addColorStop(0, COLORS.cyan);
+      grad.addColorStop(1, COLORS.success);
+    } else if (s.cls === "failure") {
+      grad.addColorStop(0, COLORS.failure);
+      grad.addColorStop(1, "#9333ea");
+    } else {
+      grad.addColorStop(0, COLORS.accentLight);
+      grad.addColorStop(1, COLORS.accent);
+    }
+
+    ctx.fillStyle = grad;
     ctx.beginPath();
-    ctx.roundRect(x, y, barW, barH, 5);
+    ctx.roundRect(x, y, barW, barH, 6);
     ctx.fill();
 
     ctx.fillStyle = COLORS.muted;
@@ -228,19 +305,24 @@ function drawChart(builds) {
     ctx.fillText(`#${b.number}`, x + barW / 2, pad.top + chartH + 16);
 
     if (barH > 18) {
-      ctx.fillStyle = "#e8edf4";
+      ctx.fillStyle = COLORS.text;
       ctx.font = "10px Segoe UI, sans-serif";
       ctx.fillText(`${sec}s`, x + barW / 2, y - 4);
     }
   });
 }
 
-function renderDashboard(data) {
+async function renderDashboard(data) {
   const builds = (data.builds || []).slice().sort((a, b) => b.number - a.number);
-  lastBuilds = builds.slice(0, HISTORY_LIMIT);
+  const tableBuilds = builds.slice(0, TABLE_LIMIT);
+  const chartBuilds = builds.slice().reverse();
+  lastBuilds = chartBuilds;
 
   const latest = builds[0];
   const st = resolveStatus(latest);
+
+  const commitTargets = latest ? [latest, ...tableBuilds.filter((b) => b.number !== latest.number)] : tableBuilds;
+  const commitMap = await resolveCommitMessages(commitTargets);
 
   $("statusBadge").textContent = latest ? st.label : "NO BUILDS";
   $("statusBadge").className = "status-badge " + (latest ? st.cls : "unknown");
@@ -257,38 +339,38 @@ function renderDashboard(data) {
   const durations = finished.map((b) => b.duration).filter((d) => d >= 0);
   const avgMs = durations.length ? durations.reduce((a, b) => a + b, 0) / durations.length : null;
 
-  $("statTotal").textContent = builds.length;
+  $("statTotal").textContent = latest ? latest.number : builds.length;
   $("statRate").textContent = finished.length ? `${rate}%` : "—";
-  $("statCommit").textContent = latest ? getCommit(latest) : "—";
+  $("statCommit").textContent = latest ? (commitMap.get(latest.number) || "—") : "—";
   $("statAvg").textContent = avgMs != null ? formatDuration(avgMs) : "—";
   $("statFailed").textContent = failures.length;
 
   drawDonut(rate);
 
   const tbody = $("historyBody");
-  if (!lastBuilds.length) {
+  if (!tableBuilds.length) {
     tbody.innerHTML = '<tr><td colspan="5" class="empty">No builds</td></tr>';
   } else {
-    tbody.innerHTML = lastBuilds.map((b) => {
+    tbody.innerHTML = tableBuilds.map((b) => {
       const s = resolveStatus(b);
       return `<tr class="${rowClass(s.cls)}">
         <td><strong>#${b.number}</strong></td>
         <td><span class="badge ${s.cls}">${s.label}</span></td>
         <td>${formatDateShort(b.timestamp)}</td>
         <td>${formatDuration(b.duration)}</td>
-        <td>${escapeHtml(getCommit(b))}</td>
+        <td>${escapeHtml(commitMap.get(b.number) || "—")}</td>
       </tr>`;
     }).join("");
   }
 
-  drawChart(builds.slice(0, HISTORY_LIMIT).reverse());
+  drawChart(chartBuilds);
 }
 
 async function refresh() {
   if (!useSessionAuth && !hasValidToken()) return;
   hideError();
   try {
-    renderDashboard(await fetchJenkinsData());
+    await renderDashboard(await fetchJenkinsData());
     setConnectionStatus(true);
     $("connectPanel").classList.add("hidden");
   } catch (err) {
@@ -334,7 +416,7 @@ async function init() {
   useSessionAuth = true;
   hideError();
   try {
-    renderDashboard(await fetchJenkinsData());
+    await renderDashboard(await fetchJenkinsData());
     setConnectionStatus(true);
     $("connectPanel").classList.add("hidden");
     return;
@@ -348,7 +430,7 @@ $("tokenInput").addEventListener("keydown", (e) => { if (e.key === "Enter") conn
 $("refreshNow").addEventListener("click", refresh);
 window.addEventListener("resize", () => {
   drawDonut(lastSuccessRate);
-  if (lastBuilds.length) drawChart(lastBuilds.slice().reverse());
+  if (lastBuilds.length) drawChart(lastBuilds);
 });
 
 init();
