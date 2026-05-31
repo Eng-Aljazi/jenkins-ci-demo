@@ -37,7 +37,7 @@ The calculator exists only to give Jenkins something to test. The real deliverab
 
 ```
 jenkins-ci-demo/
-├── Jenkinsfile              # Declarative pipeline (4 stages)
+├── Jenkinsfile              # Declarative pipeline (5 stages)
 ├── README.md
 ├── requirements.txt           # pytest, pytest-cov
 ├── pytest.ini                 # JUnit XML + coverage config
@@ -67,7 +67,8 @@ flowchart LR
     B --> C["2. Install Dependencies"]
     C --> D["3. Run Tests"]
     D --> E["4. Archive Test Results"]
-    E --> F["Jenkins UI: Pass/Fail + Coverage"]
+    E --> F["5. Deploy"]
+    F --> G["Jenkins UI: Pass/Fail + Coverage"]
 ```
 
 | Stage | What happens | Output |
@@ -76,6 +77,7 @@ flowchart LR
 | **Install Dependencies** | `python -m venv` + `pip install -r requirements.txt` | Isolated environment |
 | **Run Tests** | `pytest` with coverage | JUnit XML + HTML coverage |
 | **Archive Test Results** | Publish reports to Jenkins UI | Test trend graph + downloadable artifacts |
+| **Deploy** | Copy source to `deploy/` and archive build artifacts | Deployment folder + `DEPLOYED.txt` metadata |
 
 ### Reports Jenkins displays
 
@@ -180,9 +182,9 @@ Click **Build Now** (or push a commit). After completion:
 | Time | Activity | Talking Points |
 |------|----------|----------------|
 | 0–1 min | Show `calculator.py` | "Four functions — that's the whole app" |
-| 1–3 min | Walk through `Jenkinsfile` | Four stages, JUnit XML, artifact archiving |
+| 1–3 min | Walk through `Jenkinsfile` | Five stages, JUnit XML, artifact archiving, Deploy |
 | 3–5 min | Show GitHub webhook config | "Every push triggers a build automatically" |
-| 5–8 min | **Live push** → watch Jenkins build | Checkout → Install → Test → Archive |
+| 5–8 min | **Live push** → watch Jenkins build | Checkout → Install → Test → Archive → Deploy |
 | 8–11 min | Open **Test Result** + **Coverage Report** | Automated feedback on every commit |
 | 11–15 min | **Break test demo** (see below) | Show failure detection + recovery |
 
@@ -254,7 +256,7 @@ In Jenkins:
 ### Pipeline — All Stages Green
 
 <!-- ![Pipeline Stages](docs/screenshots/pipeline-stages.png) -->
-*Screenshot: four stages with green checkmarks.*
+*Screenshot: five stages with green checkmarks.*
 
 ### Test Results — 8 Passed
 

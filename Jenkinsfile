@@ -1,4 +1,4 @@
-// Jenkins Declarative Pipeline for the Task Manager Python CI project.
+// Jenkins Declarative Pipeline for the Calculator CI demo project.
 //
 // Stages: Checkout -> Install Dependencies -> Run Tests -> Archive Test Results -> Deploy
 //
