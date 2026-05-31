@@ -1,6 +1,6 @@
 // Jenkins Declarative Pipeline for the Task Manager Python CI project.
 //
-// Stages: Checkout -> Install Dependencies -> Run Tests -> Archive Test Results
+// Stages: Checkout -> Install Dependencies -> Run Tests -> Archive Test Results -> Deploy
 //
 // Prerequisites on the Jenkins agent:
 //   - Python 3.10+ installed and available as 'python3' or 'python'
@@ -86,11 +86,36 @@ pipeline {
                                  fingerprint: true
             }
         }
+
+        // ── Stage 5: Deploy (CD) ───────────────────────────────────────────
+        stage('Deploy') {
+            when {
+                branch 'main'
+            }
+            steps {
+                echo 'Continuous Deployment — publishing build artifacts...'
+                sh '''
+                    mkdir -p deploy
+                    cp -r src deploy/
+                    cat > deploy/DEPLOYED.txt << EOF
+Deployed: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+Commit:   $(git rev-parse --short HEAD)
+Branch:   ${BRANCH_NAME:-main}
+Build:    ${BUILD_NUMBER}
+EOF
+                    echo "Deployment complete."
+                    cat deploy/DEPLOYED.txt
+                '''
+                archiveArtifacts artifacts: 'deploy/**/*',
+                                 allowEmptyArchive: true,
+                                 fingerprint: true
+            }
+        }
     }
 
     post {
         success {
-            echo 'Pipeline completed successfully — all tests passed.'
+            echo 'Pipeline completed successfully — all tests passed and deployed.'
         }
         failure {
             echo 'Pipeline failed — check the console log and test report for details.'
