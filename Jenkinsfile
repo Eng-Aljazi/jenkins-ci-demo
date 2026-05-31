@@ -89,9 +89,6 @@ pipeline {
 
         // ── Stage 5: Deploy (CD) ───────────────────────────────────────────
         stage('Deploy') {
-            when {
-                branch 'main'
-            }
             steps {
                 echo 'Continuous Deployment — publishing build artifacts...'
                 sh '''
