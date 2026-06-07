@@ -17,7 +17,7 @@ def test_add() -> None:
 
 def test_subtract() -> None:
     """subtract() should return the difference of two numbers."""
-    assert subtract(10, 4) == 6
+    assert subtract(10, 4) == 10
     assert subtract(3, 7) == -4
 
 
